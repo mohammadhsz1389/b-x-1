@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شارژ ماینر | بازی ماینینگ با شارژر</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @font-face {
+            font-family: 'Vazir';
+            src: url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/webfonts/Vazirmatn-Regular.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        body {
+            font-family: 'Vazir', sans-serif;
+            background-color: #1a1a2e;
+            color: #e6e6e6;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background-color: #4a4a4a;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00dbde 0%, #fc00ff 100%);
+            transition: width 0.3s ease;
+        }
+        
+        .character {
+            transition: all 0.3s ease;
+        }
+        
+        .character:hover {
+            transform: scale(1.05);
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .battery-icon {
+            position: relative;
+            width: 30px;
+            height: 50px;
+            border: 3px solid #fff;
+            border-radius: 5px;
+            margin: 0 auto;
+        }
+        
+        .battery-top {
+            width: 10px;
+            height: 5px;
+            background: #fff;
+            margin: 0 auto;
+        }
+        
+        .battery-level {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: #4CAF50;
+            transition: height 0.5s;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.7);
+            }
+            70% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 10px rgba(0, 255, 0, 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(0, 255, 0, 0);
+            }
+        }
+        
+        .coin {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle at 30% 30%, #FFD700, #D4AF37);
+            border-radius: 50%;
+            box-shadow: 0 0 10px #FFD700;
+            animation: float 3s ease-in-out infinite;
+            opacity: 0;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .leaderboard-item {
+            transition: all 0.3s ease;
+        }
+        
+        .leaderboard-item:hover {
+            background-color: #2c2c54;
+            transform: scale(1.02);
+        }
+        
+        .upgrade-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upgrade-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .character-selection {
+            transition: all 0.3s ease;
+        }
+        
+        .character-selection:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+        
+        .character-selection.selected {
+            border: 3px solid #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.7);
+        }
+    </style>
+</head>
+<body class="max-w-md mx-auto pb-20">
+    <div class="fixed top-0 left-0 right-0 bg-indigo-900 text-white p-4 shadow-lg z-10">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center">
+                <i class="fas fa-bolt text-yellow-400 text-xl ml-2"></i>
+                <h1 class="text-xl font-bold">شارژ ماینر</h1>
+            </div>
+            <div class="flex items-center">
+                <div id="coins" class="bg-yellow-600 px-3 py-1 rounded-full flex items-center">
+                    <i class="fas fa-coins text-yellow-200 mr-1"></i>
+                    <span id="coin-count">0</span>
+                </div>
+                <div id="battery-status" class="ml-3 flex items-center">
+                    <div class="battery-icon">
+                        <div id="battery-level" class="battery-level" style="height: 50%;"></div>
+                    </div>
+                    <span id="battery-percent" class="mr-1">50%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-24 px-4">
+        <!-- تب‌ها -->
+        <div class="flex border-b border-gray-700 mb-4">
+            <button class="tab-btn active py-2 px-4 font-medium text-blue-300 border-b-2 border-blue-300" data-tab="mining">ماینینگ</button>
+            <button class="tab-btn py-2 px-4 font-medium text-gray-400" data-tab="upgrades">ارتقا</button>
+            <button class="tab-btn py-2 px-4 font-medium text-gray-400" data-tab="shop">فروشگاه</button>
+            <button class="tab-btn py-2 px-4 font-medium text-gray-400" data-tab="leaderboard">رتبه‌بندی</button>
+        </div>
+
+        <!-- محتوای تب‌ها -->
+        <div id="mining" class="tab-content active">
+            <div class="bg-gray-800 rounded-lg p-4 mb-4 text-center">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm text-gray-300">سرعت ماینینگ:</span>
+                    <span id="mining-speed" class="font-bold text-green-400">0 سکه/ثانیه</span>
+                </div>
+                <div class="progress-bar mb-4">
+                    <div id="mining-progress" class="progress-fill" style="width: 0%"></div>
+                </div>
+                
+                <div id="charging-status" class="bg-red-900 text-white p-3 rounded-lg mb-4 flex items-center justify-center">
+                    <i class="fas fa-plug-slash text-xl mr-2"></i>
+                    <span>گوشی به شارژر متصل نیست!</span>
+                </div>
+                
+                <div id="character-container" class="relative flex justify-center mb-6">
+                    <img id="character" src="https://via.placeholder.com/150" alt="شخصیت" class="character w-32 h-32 rounded-full border-4 border-purple-500 object-cover">
+                </div>
+                
+                <div class="bg-gray-700 rounded-lg p-3 mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-gray-300">سکه‌های این نشست:</span>
+                        <span id="session-coins" class="font-bold text-yellow-400">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-300">کل سکه‌ها:</span>
+                        <span id="total-coins" class="font-bold text-yellow-400">0</span>
+                    </div>
+                </div>
+                
+                <div class="bg-indigo-900 rounded-lg p-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-gray-300">زمان ماینینگ:</span>
+                        <span id="mining-time" class="font-bold text-blue-300">00:00:00</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-300">پاداش روزانه:</span>
+                        <span id="daily-bonus" class="font-bold text-green-400">+200 سکه</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg p-4">
+                <h3 class="text-lg font-bold mb-3 text-center">رویدادهای ویژه</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-purple-900 rounded-lg p-3 text-center">
+                        <i class="fas fa-bolt text-yellow-400 text-xl mb-2"></i>
+                        <p class="text-sm">شارژ سریع</p>
+                        <p class="text-xs text-gray-300">2x سکه برای 30 دقیقه</p>
+                    </div>
+                    <div class="bg-blue-900 rounded-lg p-3 text-center">
+                        <i class="fas fa-calendar-day text-green-400 text-xl mb-2"></i>
+                        <p class="text-sm">پاداش روزانه</p>
+                        <p class="text-xs text-gray-300">200 سکه رایگان</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="upgrades" class="tab-content">
+            <h3 class="text-lg font-bold mb-4 text-center">ارتقای تجهیزات</h3>
+            
+            <div class="grid grid-cols-1 gap-4">
+                <div class="upgrade-card bg-gray-800 rounded-lg p-4 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold">کارت گرافیک</h4>
+                        <p class="text-sm text-gray-300">سطح: <span id="gpu-level">1</span></p>
+                        <p class="text-xs text-gray-400">+5 سکه/ثانیه</p>
+                    </div>
+                    <button class="upgrade-btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded" data-upgrade="gpu" data-cost="100">
+                        ارتقا (<span id="gpu-cost">100</span> سکه)
+                    </button>
+                </div>
+                
+                <div class="upgrade-card bg-gray-800 rounded-lg p-4 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold">پردازنده مرکزی</h4>
+                        <p class="text-sm text-gray-300">سطح: <span id="cpu-level">1</span></p>
+                        <p class="text-xs text-gray-400">+3 سکه/ثانیه</p>
+                    </div>
+                    <button class="upgrade-btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded" data-upgrade="cpu" data-cost="80">
+                        ارتقا (<span id="cpu-cost">80</span> سکه)
+                    </button>
+                </div>
+                
+                <div class="upgrade-card bg-gray-800 rounded-lg p-4 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold">رم</h4>
+                        <p class="text-sm text-gray-300">سطح: <span id="ram-level">1</span></p>
+                        <p class="text-xs text-gray-400">+2 سکه/ثانیه</p>
+                    </div>
+                    <button class="upgrade-btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded" data-upgrade="ram" data-cost="60">
+                        ارتقا (<span id="ram-cost">60</span> سکه)
+                    </button>
+                </div>
+                
+                <div class="upgrade-card bg-gray-800 rounded-lg p-4 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold">خنک‌کننده</h4>
+                        <p class="text-sm text-gray-300">سطح: <span id="cooler-level">1</span></p>
+                        <p class="text-xs text-gray-400">کاهش مصرف باتری</p>
+                    </div>
+                    <button class="upgrade-btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded" data-upgrade="cooler" data-cost="120">
+                        ارتقا (<span id="cooler-cost">120</span> سکه)
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mt-6 bg-indigo-900 rounded-lg p-4">
+                <h4 class="font-bold mb-2 text-center">مشخصات ماینر</h4>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-gray-800 rounded p-2 text-center">
+                        <p class="text-sm text-gray-300">سرعت کل</p>
+                        <p id="total-speed" class="font-bold text-green-400">10 سکه/ثانیه</p>
+                    </div>
+                    <div class="bg-gray-800 rounded p-2 text-center">
+                        <p class="text-sm text-gray-300">سطح کلی</p>
+                        <p id="total-level" class="font-bold text-blue-400">4</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="shop" class="tab-content">
+            <h3 class="text-lg font-bold mb-4 text-center">فروشگاه شخصی‌سازی</h3>
+            
+            <div class="mb-6">
+                <h4 class="font-medium mb-2 text-right">شخصیت‌ها</h4>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="character-selection bg-gray-800 rounded-lg p-3 text-center" data-character="1" data-price="0">
+                        <img src="https://via.placeholder.com/80" alt="شخصیت 1" class="w-16 h-16 rounded-full mx-auto mb-2">
+                        <p class="text-sm">ماینر مبتدی</p>
+                        <p class="text-xs text-gray-400">رایگان</p>
+                    </div>
+                    <div class="character-selection bg-gray-800 rounded-lg p-3 text-center" data-character="2" data-price="500">
+                        <img src="https://via.placeholder.com/80/ff9900" alt="شخصیت 2" class="w-16 h-16 rounded-full mx-auto mb-2">
+                        <p class="text-sm">ماینر حرفه‌ای</p>
+                        <p class="text-xs text-gray-400">500 سکه</p>
+                    </div>
+                    <div class="character-selection bg-gray-800 rounded-lg p-3 text-center" data-character="3" data-price="1000">
+                        <img src="https://via.placeholder.com/80/0099ff" alt="شخصیت 3" class="w-16 h-16 rounded-full mx-auto mb-2">
+                        <p class="text-sm">ماینر افسانه‌ای</p>
+                        <p class="text-xs text-gray-400">1000 سکه</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <h4 class="font-medium mb-2 text-right">پوسته‌ها</h4>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="character-selection bg-gray-800 rounded-lg p-3 text-center" data-skin="1" data-price="300">
+                        <div class="w-full h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded mb-2"></div>
+                        <p class="text-sm">پوسته بنفش</p>
+                        <p class="text-xs text-gray-400">300 سکه</p>
+                    </div>
+                    <div class="character-selection bg-gray-800 rounded-lg p-3 text-center" data-skin="2" data-price="500">
+                        <div class="w-full h-16 bg-gradient-to-r from-blue-500 to-teal-400 rounded mb-2"></div>
+                        <p class="text-sm">پوسته آبی</p>
+                        <p class="text-xs text-gray-400">500 سکه</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <h4 class="font-medium mb-2 text-right">افزونه‌ها</h4>
+                <div class="bg-gray-800 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <div>
+                            <h5 class="font-bold">شارژر قدرتمند</h5>
+                            <p class="text-sm text-gray-300">+20% سرعت ماینینگ</p>
+                        </div>
+                        <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm" data-boost="speed" data-price="800">
+                            خرید (800 سکه)
+                        </button>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h5 class="font-bold">باتری دوگانه</h5>
+                            <p class="text-sm text-gray-300">+30% مدت زمان ماینینگ</p>
+                        </div>
+                        <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm" data-boost="battery" data-price="1200">
+                            خرید (1200 سکه)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="leaderboard" class="tab-content">
+            <h3 class="text-lg font-bold mb-4 text-center">جدول رتبه‌بندی</h3>
+            
+            <div class="bg-gray-800 rounded-lg p-4 mb-4">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-sm text-gray-300">رتبه شما:</span>
+                    <span class="font-bold text-yellow-400">#15</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-300">سکه‌های شما:</span>
+                    <span id="user-coins" class="font-bold text-yellow-400">0</span>
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg overflow-hidden">
+                <div class="grid grid-cols-12 bg-gray-700 p-2 font-medium text-sm">
+                    <div class="col-span-1">#</div>
+                    <div class="col-span-7">نام کاربر</div>
+                    <div class="col-span-4 text-left">سکه</div>
+                </div>
+                
+                <div id="leaderboard-list">
+                    <div class="leaderboard-item grid grid-cols-12 p-2 border-b border-gray-700">
+                        <div class="col-span-1 font-bold text-yellow-400">1</div>
+                        <div class="col-span-7 flex items-center">
+                            <img src="https://via.placeholder.com/30" alt="کاربر" class="w-6 h-6 rounded-full mr-2">
+                            <span>ماینر افسانه‌ای</span>
+                        </div>
+                        <div class="col-span-4 text-left font-bold">12,450</div>
+                    </div>
+                    <div class="leaderboard-item grid grid-cols-12 p-2 border-b border-gray-700">
+                        <div class="col-span-1 font-bold text-gray-400">2</div>
+                        <div class="col-span-7 flex items-center">
+                            <img src="https://via.placeholder.com/30/ff9900" alt="کاربر" class="w-6 h-6 rounded-full mr-2">
+                            <span>ماینر طلایی</span>
+                        </div>
+                        <div class="col-span-4 text-left font-bold">10,200</div>
+                    </div>
+                    <div class="leaderboard-item grid grid-cols-12 p-2 border-b border-gray-700">
+                        <div class="col-span-1 font-bold text-amber-600">3</div>
+                        <div class="col-span-7 flex items-center">
+                            <img src="https://via.placeholder.com/30/0099ff" alt="کاربر" class="w-6 h-6 rounded-full mr-2">
+                            <span>ماینر حرفه‌ای</span>
+                        </div>
+                        <div class="col-span-4 text-left font-bold">8,750</div>
+                    </div>
+                    <div class="leaderboard-item grid grid-cols-12 p-2 border-b border-gray-700">
+                        <div class="col-span-1">4</div>
+                        <div class="col-span-7 flex items-center">
+                            <img src="https://via.placeholder.com/30" alt="کاربر" class="w-6 h-6 rounded-full mr-2">
+                            <span>ماینر نقره‌ای</span>
+                        </div>
+                        <div class="col-span-4 text-left font-bold">7,300</div>
+                    </div>
+                    <div class="leaderboard-item grid grid-cols-12 p-2">
+                        <div class="col-span-1">5</div>
+                        <div class="col-span-7 flex items-center">
+                            <img src="https://via.placeholder.com/30" alt="کاربر" class="w-6 h-6 rounded-full mr-2">
+                            <span>ماینر معمولی</span>
+                        </div>
+                        <div class="col-span-4 text-left font-bold">6,150</div>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="refresh-leaderboard" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded flex items-center justify-center">
+                <i class="fas fa-sync-alt mr-2"></i>
+                بروزرسانی جدول
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // حالت بازی
+        const gameState = {
+            coins: 0,
+            sessionCoins: 0,
+            miningSpeed: 0,
+            totalSpeed: 0,
+            miningTime: 0,
+            isCharging: false,
+            lastUpdate: Date.now(),
+            upgrades: {
+                gpu: { level: 1, cost: 100, speed: 5 },
+                cpu: { level: 1, cost: 80, speed: 3 },
+                ram: { level: 1, cost: 60, speed: 2 },
+                cooler: { level: 1, cost: 120 }
+            },
+            character: 1,
+            skin: 1,
+            boosts: {
+                speed: false,
+                battery: false
+            }
+        };
+
+        // ذخیره و بازیابی وضعیت بازی
+        function saveGame() {
+            localStorage.setItem('chargeMinerSave', JSON.stringify(gameState));
+        }
+
+        function loadGame() {
+            const savedGame = localStorage.getItem('chargeMinerSave');
+            if (savedGame) {
+                Object.assign(gameState, JSON.parse(savedGame));
+                updateUI();
+                calculateTotalSpeed();
+            }
+        }
+
+        // محاسبه سرعت کلی ماینینگ
+        function calculateTotalSpeed() {
+            let speed = 0;
+            speed += gameState.upgrades.gpu.level * gameState.upgrades.gpu.speed;
+            speed += gameState.upgrades.cpu.level * gameState.upgrades.cpu.speed;
+            speed += gameState.upgrades.ram.level * gameState.upgrades.ram.speed;
+            
+            if (gameState.boosts.speed) {
+                speed *= 1.2;
+            }
+            
+            gameState.totalSpeed = Math.floor(speed);
+            gameState.miningSpeed = speed;
+            
+            document.getElementById('total-speed').textContent = `${gameState.totalSpeed} سکه/ثانیه`;
+            document.getElementById('mining-speed').textContent = `${gameState.totalSpeed} سکه/ثانیه`;
+            
+            const totalLevel = gameState.upgrades.gpu.level + gameState.upgrades.cpu.level + 
+                             gameState.upgrades.ram.level + gameState.upgrades.cooler.level;
+            document.getElementById('total-level').textContent = totalLevel;
+        }
+
+        // شبیه‌سازی تشخیص شارژر
+        function simulateChargingDetection() {
+            // در واقعیت این بخش باید به API باتری گوشی متصل شود
+            // برای دمو، از یک شبیه‌ساز استفاده می‌کنیم
+            const chargingStatus = document.getElementById('charging-status');
+            const batteryLevel = document.getElementById('battery-level');
+            const batteryPercent = document.getElementById('battery-percent');
+            
+            // شبیه‌سازی تغییرات باتری
+            let battery = 50;
+            let isCharging = false;
+            
+            setInterval(() => {
+                if (isCharging) {
+                    battery += 2;
+                    if (battery > 100) battery = 100;
+                } else {
+                    battery -= 1;
+                    if (battery < 5) battery = 5;
+                }
+                
+                batteryLevel.style.height = `${battery}%`;
+                batteryPercent.textContent = `${battery}%`;
+                
+                // تغییر رنگ باتری بر اساس سطح
+                if (battery < 20) {
+                    batteryLevel.style.backgroundColor = '#f44336';
+                } else if (battery < 50) {
+                    batteryLevel.style.backgroundColor = '#ff9800';
+                } else {
+                    batteryLevel.style.backgroundColor = '#4CAF50';
+                }
+            }, 1000);
+            
+            // شبیه‌سازی اتصال/قطع شارژر با کلیک
+            chargingStatus.addEventListener('click', () => {
+                isCharging = !isCharging;
+                gameState.isCharging = isCharging;
+                
+                if (isCharging) {
+                    chargingStatus.innerHTML = '<i class="fas fa-plug text-xl mr-2"></i><span>در حال شارژ و ماینینگ!</span>';
+                    chargingStatus.className = 'bg-green-900 text-white p-3 rounded-lg mb-4 flex items-center justify-center pulse';
+                    gameState.lastUpdate = Date.now();
+                    
+                    // شروع انیمیشن ماینینگ
+                    document.getElementById('character').classList.add('animate-pulse');
+                } else {
+                    chargingStatus.innerHTML = '<i class="fas fa-plug-slash text-xl mr-2"></i><span>گوشی به شارژر متصل نیست!</span>';
+                    chargingStatus.className = 'bg-red-900 text-white p-3 rounded-lg mb-4 flex items-center justify-center';
+                    document.getElementById('character').classList.remove('animate-pulse');
+                    
+                    // ذخیره بازی هنگام قطع شارژ
+                    saveGame();
+                }
+            });
+        }
+
+        // سیستم ماینینگ
+        function miningLoop() {
+            const now = Date.now();
+            const deltaTime = (now - gameState.lastUpdate) / 1000; // به ثانیه
+            
+            if (gameState.isCharging) {
+                // محاسبه سکه‌های کسب شده
+                const coinsEarned = gameState.miningSpeed * deltaTime;
+                gameState.coins += coinsEarned;
+                gameState.sessionCoins += coinsEarned;
+                gameState.miningTime += deltaTime;
+                
+                // به‌روزرسانی پیشرفت ماینینگ
+                const progress = (gameState.miningTime % 10) / 10 * 100;
+                document.getElementById('mining-progress').style.width = `${progress}%`;
+                
+                // نمایش سکه‌های پرنده
+                if (Math.random() < 0.1) {
+                    createFlyingCoin();
+                }
+            }
+            
+            gameState.lastUpdate = now;
+            
+            // به‌روزرسانی UI
+            updateUI();
+            
+            requestAnimationFrame(miningLoop);
+        }
+
+        // ایجاد سکه پرنده
+        function createFlyingCoin() {
+            const container = document.getElementById('character-container');
+            const coin = document.createElement('div');
+            coin.className = 'coin';
+            
+            // موقعیت تصادفی حول شخصیت
+            const x = Math.random() * 100 - 50;
+            const y = Math.random() * 100 - 50;
+            
+            coin.style.left = `calc(50% + ${x}px)`;
+            coin.style.top = `calc(50% + ${y}px)`;
+            coin.style.animationDuration = `${2 + Math.random() * 3}s`;
+            coin.style.animationDelay = `${Math.random() * 0.5}s`;
+            
+            container.appendChild(coin);
+            
+            // حذف سکه پس از انیمیشن
+            setTimeout(() => {
+                coin.remove();
+            }, 5000);
+        }
+
+        // به‌روزرسانی UI
+        function updateUI() {
+            document.getElementById('coin-count').textContent = Math.floor(gameState.coins);
+            document.getElementById('session-coins').textContent = Math.floor(gameState.sessionCoins);
+            document.getElementById('total-coins').textContent = Math.floor(gameState.coins);
+            document.getElementById('user-coins').textContent = Math.floor(gameState.coins);
+            
+            // نمایش زمان ماینینگ
+            const hours = Math.floor(gameState.miningTime / 3600);
+            const minutes = Math.floor((gameState.miningTime % 3600) / 60);
+            const seconds = Math.floor(gameState.miningTime % 60);
+            
+            document.getElementById('mining-time').textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // به‌روزرسانی سطح ارتقاها
+            document.getElementById('gpu-level').textContent = gameState.upgrades.gpu.level;
+            document.getElementById('gpu-cost').textContent = gameState.upgrades.gpu.cost;
+            
+            document.getElementById('cpu-level').textContent = gameState.upgrades.cpu.level;
+            document.getElementById('cpu-cost').textContent = gameState.upgrades.cpu.cost;
+            
+            document.getElementById('ram-level').textContent = gameState.upgrades.ram.level;
+            document.getElementById('ram-cost').textContent = gameState.upgrades.ram.cost;
+            
+            document.getElementById('cooler-level').textContent = gameState.upgrades.cooler.level;
+            document.getElementById('cooler-cost').textContent = gameState.upgrades.cooler.cost;
+        }
+
+        // مدیریت تب‌ها
+        function setupTabs() {
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // حذف کلاس active از همه دکمه‌ها و محتواها
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // اضافه کردن کلاس active به تب انتخاب شده
+                    button.classList.add('active');
+                    const tabId = button.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+        }
+
+        // سیستم ارتقا
+        function setupUpgrades() {
+            document.querySelectorAll('.upgrade-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const upgradeType = button.getAttribute('data-upgrade');
+                    const cost = parseInt(button.getAttribute('data-cost'));
+                    
+                    if (gameState.coins >= cost) {
+                        gameState.coins -= cost;
+                        gameState.upgrades[upgradeType].level += 1;
+                        
+                        // افزایش هزینه ارتقا برای سطح بعدی
+                        gameState.upgrades[upgradeType].cost = Math.floor(cost * 1.5);
+                        
+                        // محاسبه مجدد سرعت
+                        calculateTotalSpeed();
+                        updateUI();
+                        saveGame();
+                        
+                        // افکت خرید موفق
+                        button.textContent = 'موفق!';
+                        button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                        button.classList.add('bg-green-600');
+                        
+                        setTimeout(() => {
+                            button.innerHTML = `ارتقا (<span id="${upgradeType}-cost">${gameState.upgrades[upgradeType].cost}</span> سکه)`;
+                            button.classList.remove('bg-green-600');
+                            button.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                        }, 1000);
+                    } else {
+                        // افکت عدم موفقیت
+                        button.textContent = 'سکه کافی نیست!';
+                        button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                        button.classList.add('bg-red-600');
+                        
+                        setTimeout(() => {
+                            button.innerHTML = `ارتقا (<span id="${upgradeType}-cost">${cost}</span> سکه)`;
+                            button.classList.remove('bg-red-600');
+                            button.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                        }, 1000);
+                    }
+                });
+            });
+        }
+
+        // فروشگاه و شخصی‌سازی
+        function setupShop() {
+            // انتخاب شخصیت
+            document.querySelectorAll('[data-character]').forEach(item => {
+                item.addEventListener('click', () => {
+                    const characterId = item.getAttribute('data-character');
+                    const price = parseInt(item.getAttribute('data-price'));
+                    
+                    if (gameState.coins >= price || price === 0) {
+                        if (price > 0) {
+                            gameState.coins -= price;
+                        }
+                        
+                        gameState.character = parseInt(characterId);
+                        
+                        // تغییر تصویر شخصیت (در واقعیت باید تصاویر واقعی استفاده شود)
+                        const characterImg = document.getElementById('character');
+                        characterImg.src = `https://via.placeholder.com/150/${characterId === '1' ? '' : characterId === '2' ? 'ff9900' : '0099ff'}`;
+                        
+                        // برجسته کردن انتخاب
+                        document.querySelectorAll('[data-character]').forEach(char => {
+                            char.classList.remove('selected');
+                        });
+                        item.classList.add('selected');
+                        
+                        updateUI();
+                        saveGame();
+                    } else {
+                        alert('سکه کافی نیست!');
+                    }
+                });
+            });
+            
+            // انتخاب پوسته
+            document.querySelectorAll('[data-skin]').forEach(item => {
+                item.addEventListener('click', () => {
+                    const skinId = item.getAttribute('data-skin');
+                    const price = parseInt(item.getAttribute('data-price'));
+                    
+                    if (gameState.coins >= price) {
+                        gameState.coins -= price;
+                        gameState.skin = parseInt(skinId);
+                        
+                        // تغییر پوسته (در واقعیت باید استایل‌های واقعی اعمال شود)
+                        const characterContainer = document.getElementById('character-container');
+                        if (skinId === '1') {
+                            characterContainer.style.background = 'linear-gradient(to right, #8e2de2, #4a00e0)';
+                        } else {
+                            characterContainer.style.background = 'linear-gradient(to right, #00b4db, #0083b0)';
+                        }
+                        
+                        // برجسته کردن انتخاب
+                        document.querySelectorAll('[data-skin]').forEach(skin => {
+                            skin.classList.remove('selected');
+                        });
+                        item.classList.add('selected');
+                        
+                        updateUI();
+                        saveGame();
+                    } else {
+                        alert('سکه کافی نیست!');
+                    }
+                });
+            });
+            
+            // خرید افزونه‌ها
+            document.querySelectorAll('[data-boost]').forEach(item => {
+                item.addEventListener('click', () => {
+                    const boostType = item.getAttribute('data-boost');
+                    const price = parseInt(item.getAttribute('data-price'));
+                    
+                    if (gameState.coins >= price && !gameState.boosts[boostType]) {
+                        gameState.coins -= price;
+                        gameState.boosts[boostType] = true;
+                        
+                        // محاسبه مجدد سرعت در صورت نیاز
+                        calculateTotalSpeed();
+                        
+                        // تغییر دکمه
+                        item.textContent = 'فعال!';
+                        item.classList.remove('bg-green-600', 'hover:bg-green-700');
+                        item.classList.add('bg-purple-600');
+                        
+                        updateUI();
+                        saveGame();
+                    } else if (gameState.boosts[boostType]) {
+                        alert('این افزونه قبلاً خریداری شده است!');
+                    } else {
+                        alert('سکه کافی نیست!');
+                    }
+                });
+            });
+        }
+
+        // رتبه‌بندی
+        function setupLeaderboard() {
+            document.getElementById('refresh-leaderboard').addEventListener('click', () => {
+                // شبیه‌سازی بروزرسانی جدول
+                const leaderboardList = document.getElementById('leaderboard-list');
+                leaderboardList.classList.add('opacity-50');
+                
+                setTimeout(() => {
+                    leaderboardList.classList.remove('opacity-50');
+                    
+                    // در واقعیت اینجا باید داده‌های جدید از سرور دریافت شود
+                    // برای دمو فقط یک پیام نمایش می‌دهیم
+                    alert('جدول رتبه‌بندی بروزرسانی شد!');
+                }, 1000);
+            });
+        }
+
+        // پاداش روزانه
+        function setupDailyBonus() {
+            const lastBonusDate = localStorage.getItem('lastBonusDate');
+            const today = new Date().toDateString();
+            
+            if (lastBonusDate !== today) {
+                // اعطای پاداش
+                gameState.coins += 200;
+                localStorage.setItem('lastBonusDate', today);
+                saveGame();
+                
+                // نمایش پیام پاداش
+                const bonusElement = document.getElementById('daily-bonus');
+                bonusElement.classList.add('animate-bounce');
+                
+                setTimeout(() => {
+                    bonusElement.classList.remove('animate-bounce');
+                }, 2000);
+            }
+        }
+
+        // مقداردهی اولیه بازی
+        function initGame() {
+            loadGame();
+            setupTabs();
+            setupUpgrades();
+            setupShop();
+            setupLeaderboard();
+            simulateChargingDetection();
+            setupDailyBonus();
+            
+            // انتخاب شخصیت پیش‌فرض
+            document.querySelector(`[data-character="${gameState.character}"]`).classList.add('selected');
+            
+            // شروع حلقه بازی
+            miningLoop();
+        }
+
+        // شروع بازی هنگامی که صفحه بارگذاری شد
+        window.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
